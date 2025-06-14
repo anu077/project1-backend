@@ -1,0 +1,47 @@
+project setup
+step1: npm init -y
+step2: npm install express nodemon
+
+we are using typescript (ts)  for development 
+step3: npm i --save-dev typescript
+step4: npm i @types/express
+types ko kura aayo vane development dependencies ko kura aauxa 
+step5: npm i @types/node
+step6:npx tsc --init
+input file src ma hunxa ani  output file build
+
+main file app.ts
+
+step7:npx tsc 
+step8: npm i sequelize mysql2
+step9: npm i --save-dev @types/sequelize
+config folder banau ne for the db connection with the backend
+model file banaune ani tesma actual table  ko kura lekhne ho
+
+
+database connection ko laagi next way vane ko 
+ step10: npm install dotenv
+
+ npm i tsc-node for the  ts file detection
+ npm i rimraf for th build 
+ to run rimraf type
+ npm run build
+
+
+
+install 
+step11: 
+npm i sequelize-typescript for database connection
+
+
+npm  i reflect-metadata  issue aako khanda ma
+
+
+npm i bcrypt    
+for encryption
+
+for ts ko laagi npm i @types/bcrypt
+
+npm i jsonwebtoken @types/jsonwebtoken
+
+or npm i @types/jsonwebtoken
