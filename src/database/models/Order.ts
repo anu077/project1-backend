@@ -6,12 +6,12 @@ import {
 } from 'sequelize-typescript'
 
 @Table({
-    tableName : 'categories',
-    modelName : 'Category',
+    tableName : 'orders',
+    modelName : 'Order',
     timestamps : true
 })
 
-class Category extends Model{
+class Order extends Model{
     @Column({
         primaryKey : true,
         type : DataType.UUID,
@@ -21,9 +21,33 @@ class Category extends Model{
 
     @Column({
         type : DataType.STRING,
+        allowNull : false,
+        validate : {
+            len : {
+                args : [10,10],
+                msg : 'Phone number must be 10 digits'
+            }
+        }
+    })
+    declare phoneNumber : string
+
+    @Column({
+        type : DataType.STRING,
         allowNull : false
     })
-    declare categoryName : string
+    declare shippingAddress : string
+
+    @Column({
+        type : DataType.FLOAT,
+        allowNull : false
+    })
+    declare totalAmount : number
+
+    @Column({
+        type : DataType.ENUM('pending','cancelled','delivered','ontheway','preparation'),
+        defaultValue : 'pending'
+    })
+    declare orderState : string
 }
 
-export default Category
+export default Order

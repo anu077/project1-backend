@@ -17,7 +17,7 @@ export interface AuthRequest extends Request{
 
 export enum Role{
     Admin = 'admin',
-    Customer = 'customer'
+    Customer = 'customer',
 }
 
 class AuthMiddleware{

@@ -6,30 +6,48 @@ import Cart from './models/Cart'
 import Order from './models/Order'
 import OrderDetail from './models/OrderDetails'
 import Payment from './models/Payment'
+import dotenv from 'dotenv';
+import path from 'path';
 
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+const requiredEnvVars = ['DB_NAME', 'DB_USERNAME', 'DB_HOST'];
+const missingVars = requiredEnvVars.filter((varName) => !process.env[varName]);
+if (missingVars.length > 0) {
+  throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
+}
 
 const sequelize = new Sequelize({
-    database : process.env.DB_NAME,
-    dialect : 'mysql',
-    username : process.env.DB_USERNAME,
-    password : process.env.DB_PASSWORD,
-    host : process.env.DB_HOST,
-    port : Number(process.env.DB_PORT),
-    models : [__dirname + "/models"]
-})
+  database: process.env.DB_NAME ,
+  dialect: 'mysql',
+  username: process.env.DB_USERNAME,
+  password: process.env.DB_PASSWORD || '', // Handle empty password
+  host: process.env.DB_HOST || 'localhost',
+  port: Number(process.env.DB_PORT) || 3306, // Default MySQL port
+ models : [__dirname + "/models"],
+  logging: false, // Set to console.log for debugging
+});
 
-sequelize.authenticate()
-.then(()=>{
-    console.log("connected")
-})
-.catch((err)=>{
-    console.log(err)
-})
+// Test connection
+sequelize
+  .authenticate()
+  .then(() => {
+    console.log('Database connected successfully');
+  })
+  .catch((err) => {
+    console.error('Unable to connect to the database:', err);
+    throw err;
+  });
 
-sequelize.sync({force : false}).then(()=>{
-    console.log("synced !!!")
-})
-
+// Sync database
+sequelize
+  .sync({ force: false })
+  .then(() => {
+    console.log('Database synced successfully');
+  })
+  .catch((err) => {
+    console.error('Failed to sync database:', err);
+    throw err;
+  });
 // Relationships  
 
 User.hasMany(Product,{foreignKey : 'userId'})

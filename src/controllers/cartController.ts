@@ -1,4 +1,4 @@
-import { Request,Response } from "express";
+import { Response } from "express";
 import { AuthRequest } from "../middleware/authMiddleware";
 import Cart from "../database/models/Cart";
 import Product from "../database/models/Product";

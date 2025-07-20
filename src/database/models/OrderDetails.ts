@@ -29,3 +29,4 @@ class OrderDetail extends Model{
 }
 
 export default OrderDetail
+

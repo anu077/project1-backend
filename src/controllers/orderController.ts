@@ -1,6 +1,6 @@
 import { Response,Request } from "express";
 import { AuthRequest } from "../middleware/authMiddleware";
-import { KhaltiResponse , OrderData, OrderStatus, PaymentMethod, PaymentStatus, TransactionStatus, TransactionVerificationResponse} from "../types/orderTypes";
+import { KhaltiResponse , OrderData, orderState, PaymentMethod, PaymentStatus, TransactionStatus, transactionVerificationResponse } from "../types/orderTypes";
 import Order from "../database/models/Order";
 import Payment from "../database/models/Payment";
 import OrderDetail from "../database/models/OrderDetails";
@@ -11,74 +11,88 @@ import User from "../database/models/User";
 import Category from "../database/models/Category";
 
 
+
 class ExtendedOrder extends Order{
-    declare paymentId : string | null
+    declare paymentId: string;
 }
 
 class OrderController{
     async createOrder(req:AuthRequest,res:Response):Promise<void>{
-        console.log(req.body)
-        const userId = req.user?.id
-        const {phoneNumber,shippingAddress,totalAmount,paymentDetails,items}:OrderData = req.body 
-        if(!phoneNumber || !shippingAddress || !totalAmount || !paymentDetails || !paymentDetails.paymentMethod || items.length == 0  ){
-            res.status(400).json({
-               message :  "Please provide phoneNumber,shippingAddress,totalAmount,paymentDetails,items"
-            })
-            return
-        }
-
-        const paymentData = await Payment.create({
-            paymentMethod : paymentDetails.paymentMethod
-        })
-        const orderData =  await Order.create({
-            phoneNumber, 
-            shippingAddress,
-            totalAmount,
-            userId,
-            paymentId : paymentData.id
-        })
-
-        let responseOrderData ; 
-
-        for(var i = 0 ; i<items.length ; i++){
-         responseOrderData =  await OrderDetail.create({
-                quantity : items[i].quantity,
-                productId : items[i].productId,
-                orderId : orderData.id
-            })
-           await Cart.destroy({
-                where : {
-                    productId : items[i].productId, 
-                    userId : userId
-                }
-            })
-        }
-        if(paymentDetails.paymentMethod === PaymentMethod.Khalti){
-            // khalti integration
-            const data = {
-                return_url : "http://localhost:5173/success/",
-                purchase_order_id : orderData.id,
-                amount : totalAmount * 100,
-                website_url :"http://localhost:5173/",
-                purchase_order_name : 'orderName_' + orderData.id
+        try {
+            console.log('Creating order with data:', req.body);
+            const userId = req.user?.id
+            const {phoneNumber,shippingAddress,totalAmount,paymentDetails,items}:OrderData = req.body 
+            if(!phoneNumber || !shippingAddress || !totalAmount || !paymentDetails || !paymentDetails.paymentMethod || items.length == 0  ){
+                res.status(400).json({
+                   message :  "Please provide phoneNumber,shippingAddress,totalAmount,paymentDetails,items"
+                })
+                return
             }
-           const response = await  axios.post('https://a.khalti.com/api/v2/epayment/initiate/',data,{
-                headers : {
-                    'Authorization' : 'key 625cc1cff7cb408b8c84df0f7502a634'
+
+            const paymentData = await Payment.create({
+                paymentMethod : paymentDetails.paymentMethod
+            })
+            const orderData =  await Order.create({
+                phoneNumber, 
+                shippingAddress,
+                totalAmount,
+                orderState: orderState.Pending,
+                userId,
+                paymentId : paymentData.id,
+              
+            })
+
+            let responseOrderData ; 
+
+            for(var i = 0 ; i<items.length ; i++){
+             responseOrderData =  await OrderDetail.create({
+                    quantity : items[i].quantity,
+                    productId : items[i].productId,
+                    orderId : orderData.id
+                })
+               await Cart.destroy({
+                    where : {
+                        productId : items[i].productId, 
+                        userId : userId
+                    }
+                })
+            }
+            if(paymentDetails.paymentMethod === PaymentMethod.Khalti){
+                // khalti integration
+                const data = {
+                    return_url : "http://localhost:5173/success/",
+                    purchase_order_id : orderData.id,
+                    amount : totalAmount * 100,
+                    website_url :"http://localhost:5173/",
+                    purchase_order_name : 'orderName_' + orderData.id
                 }
-            })
-            const khaltiResponse:KhaltiResponse = response.data
-            paymentData.pidx = khaltiResponse.pidx 
-            paymentData.save()
-            res.status(200).json({
-                message : "order placed successfully",
-                url : khaltiResponse.payment_url, 
-                data : responseOrderData
-            })
-        }else{
-            res.status(200).json({
-                message : "Order placed successfully"
-            })
+               const response = await  axios.post('https://dev.khalti.com/api/v2/epayment/initiate/',data,{
+                    headers : {
+                        'Authorization' : 'key c473315df73040b4acb75843887c701c'
+                    }
+                })
+                const khaltiResponse:KhaltiResponse = response.data
+                paymentData.pidx = khaltiResponse.pidx 
+                paymentData.save()
+                res.status(200).json({
+                    message : "order placed successfully",
+                    url : khaltiResponse.payment_url, 
+                    order: orderData,
+                    orderDetails: responseOrderData
+                })
+            }else{
+                res.status(200).json({
+                    message: "Order placed successfully",
+                    order: orderData,
+                    orderDetails: responseOrderData
+                });
+            }
+        } catch (error: any) {
+            console.error('Error creating order:', error);
+            res.status(500).json({
+                message: "Failed to create order",
+                error: error.message
+            });
         }
     }
     async verifyTransaction(req:AuthRequest,res:Response):Promise<void>{
@@ -90,12 +104,12 @@ class OrderController{
             })
             return
         }
-        const response = await axios.post("https://a.khalti.com/api/v2/epayment/lookup/",{pidx},{
+        const response = await axios.post("https://dev.khalti.com/api/v2/epayment/lookup/",{pidx},{
             headers : {
-                'Authorization' : 'key 625cc1cff7cb408b8c84df0f7502a634'
+                'Authorization' : 'key c473315df73040b4acb75843887c701c'
             }
         })
-        const data:TransactionVerificationResponse = response.data 
+        const data:transactionVerificationResponse = response.data 
         console.log(data)
         if(data.status === TransactionStatus.Completed ){
           await Payment.update({paymentStatus:'paid'},{
@@ -186,13 +200,13 @@ class OrderController{
                 id : orderId
             }
         })
-        if(order?.orderStatus === OrderStatus.Ontheway || order?.orderStatus === OrderStatus.Preparation ){
+        if(order?.orderState === orderState.Ontheway || order?.orderState === orderState.Preparation ){
              res.status(200).json({
                 message : "You cannot cancell order when it is in ontheway or prepared"
             })
             return
         }
-        await Order.update({orderStatus : OrderStatus.Cancelled},{
+        await Order.update({orderState : orderState.Cancelled},{
             where : {
                 id : orderId
             }
@@ -204,11 +218,11 @@ class OrderController{
     // Customer side ends here
     // Admin side starts here 
 
-    async changeOrderStatus(req:Request,res:Response):Promise<void>{
+    async changeorderState(req:Request,res:Response):Promise<void>{
         const orderId = req.params.id 
-        const orderStatus:OrderStatus = req.body.orderStatus
+        const orderState:orderState = req.body.orderState
         await Order.update({
-            orderStatus : orderStatus
+            orderState : orderState
         },{
             where : {
                 id : orderId

@@ -15,7 +15,7 @@ router.route("/customer/:id").patch(authMiddleware.isAuthenticated, authMiddlewa
 
 router.route("/admin/payment/:id").patch(authMiddleware.isAuthenticated,authMiddleware.restrictTo(Role.Admin),errorHandler(orderController.changePaymentStatus))
 
-router.route("/admin/:id").patch(authMiddleware.isAuthenticated,authMiddleware.restrictTo(Role.Admin),errorHandler(orderController.changeOrderStatus)).delete(authMiddleware.isAuthenticated,authMiddleware.restrictTo(Role.Admin),errorHandler(orderController.deleteOrder))
+router.route("/admin/:id").patch(authMiddleware.isAuthenticated,authMiddleware.restrictTo(Role.Admin),errorHandler(orderController.changeorderState)).delete(authMiddleware.isAuthenticated,authMiddleware.restrictTo(Role.Admin),errorHandler(orderController.deleteOrder))
 
 
 

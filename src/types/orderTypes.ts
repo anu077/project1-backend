@@ -1,5 +1,4 @@
 
-
 export interface OrderData{
     phoneNumber : string, 
     shippingAddress : string, 
@@ -35,7 +34,7 @@ export interface KhaltiResponse{
     user_fee : number 
 }
 
-export interface TransactionVerificationResponse{
+export interface transactionVerificationResponse{
     pidx : string,
    total_amount: number,
    status: TransactionStatus,
@@ -51,7 +50,7 @@ export enum TransactionStatus{
     Initiated = 'Initiated'
 }
 
-export enum OrderStatus{
+export enum orderState{
     Pending = 'pending',
     Cancelled = 'cancelled',
     Ontheway = 'ontheway',
